@@ -1,29 +1,29 @@
-name: CLOUDFLARE_STABLE_SSH
+name: CLOUDFLARE_UNBREAKABLE_SSH
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Stable Environment
+      - name: Setup Super Environment
         run: |
           # 1. إعداد المستخدم والـ SSH
           sudo useradd -m core_user -s /bin/bash
           sudo usermod -aG sudo core_user
           echo "core_user:password123" | sudo chpasswd
-          sudo apt-get update && sudo apt-get install -y openssh-server
           
-          # 2. ضبط الـ SSH لمنع الـ Broken pipe
-          sudo sed -i 's/#TCPKeepAlive yes/TCPKeepAlive yes/' /etc/ssh/sshd_config
-          sudo sed -i 's/#ClientAliveInterval 0/ClientAliveInterval 15/' /etc/ssh/sshd_config
-          sudo sed -i 's/#ClientAliveCountMax 3/ClientAliveCountMax 100/' /etc/ssh/sshd_config
+          # 2. ضبط SSH ليكون "عنيداً" ولا يقطع الاتصال
+          sudo apt-get update && sudo apt-get install -y openssh-server
+          echo "TCPKeepAlive yes" | sudo tee -a /etc/ssh/sshd_config
+          echo "ClientAliveInterval 5" | sudo tee -a /etc/ssh/sshd_config
+          echo "ClientAliveCountMax 1000" | sudo tee -a /etc/ssh/sshd_config
           sudo service ssh restart
           
-          # 3. تحميل وتثبيت Cloudflared
+          # 3. تحميل وتثبيت Cloudflared بشكل سليم
           curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
           sudo dpkg -i cloudflared.deb
           
-          # 4. تشغيل النفق وإبقاء المهمة تعمل
-          echo "SERVER READY - USE THE LINK BELOW"
-          cloudflared tunnel --url tcp://localhost:22
+          # 4. تشغيل النفق مع بروتوكول HTTP2 لزيادة الاستقرار
+          echo "SERVER IS READY!"
+          cloudflared tunnel --protocol http2 --url tcp://localhost:22
           
