@@ -5,28 +5,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Shadow Environment
+      - name: Force Connect Environment
         run: |
-          # 1. إعداد مستخدم جديد (Username: core_user)
-          sudo useradd -m core_user -s /bin/bash
-          sudo usermod -aG sudo core_user
-          echo "core_user:password123" | sudo chpasswd
+          # 1. تنظيف وإعداد المستخدم
+          sudo useradd -m admin_core -s /bin/bash
+          sudo usermod -aG sudo admin_core
+          echo "admin_core:password123" | sudo chpasswd
           
-          # 2. تثبيت Cloudflared
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          # 2. إعداد الـ SSH بضبط يسمح بالاتصال السريع
+          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo service ssh restart
+          
+          # 3. تحميل وتثبيت أداة النفق
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
           
-          # 3. تشغيل خدمة SSH
-          sudo service ssh start
+          # 4. تشغيل النفق بصيغة "الربط المباشر"
+          echo "GENERATING SECURE LINK..."
+          nohup cloudflared tunnel --url tcp://127.0.0.1:22 > cf.log 2>&1 &
           
-          # 4. فتح النفق واستخراج الرابط
-          echo "Connecting to Cloudflare..."
-          nohup cloudflared tunnel --url tcp://localhost:22 > cf.log 2>&1 &
+          # 5. استخراج الرابط بشكل متكرر لضمان ظهوره
           sleep 20
           echo "------------------------------------"
           echo "SSH CONNECTION DETAILS FOR TERMIUS:"
           grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf.log | sed 's/https:\/\//tcp:\/\//'
           echo "------------------------------------"
           
-          # إبقاء المهمة تعمل لمدة 6 ساعات
+          # إبقاء المهمة تعمل
           sleep 21600
