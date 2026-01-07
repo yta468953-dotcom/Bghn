@@ -1,16 +1,21 @@
-name: Architect_Ultimate_VPS
+name: Architect_Termius_Direct
 on: workflow_dispatch
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Set_Root_Access
+    - name: Set_Root_Password
+      run: echo "root:Architect2026" | sudo chpasswd
+    - name: Enable_SSH
       run: |
-        echo "root:Architect2026" | sudo chpasswd
         sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
         sudo service ssh restart
-    - name: Launch_Cloudflared_Tunnel
+    - name: Install_Ngrok
       run: |
-        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-        sudo dpkg -i cloudflared-linux-amd64.deb
-        cloudflared tunnel --url tcp://localhost:22
+        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+        sudo apt update && sudo apt install ngrok
+    - name: Launch_Ngrok_Tunnel
+      run: |
+        ngrok config add-authtoken 37Gdz3LAplUOXvqO3OQEOJGjUS7_wBuKAyioZEL1EsEL5j8s
+        ngrok tcp 22
