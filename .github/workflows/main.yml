@@ -12,16 +12,19 @@ jobs:
           sudo usermod -aG sudo core_user
           echo "core_user:password123" | sudo chpasswd
           
-          # 2. تثبيت وتحديث SSH لمنع الـ Disconnect
-          sudo apt-get update && sudo apt-get install -y openssh-server
-          sudo sed -i 's/#TCPKeepAlive yes/TCPKeepAlive yes/' /etc/ssh/sshd_config
-          sudo sed -i 's/#ClientAliveInterval 0/ClientAliveInterval 60/' /etc/ssh/sshd_config
+          # 2. تحديث وتثبيت SSH مع ضبط الاستقرار
+          sudo apt-get update
+          sudo apt-get install -y openssh-server
+          echo "TCPKeepAlive yes" | sudo tee -a /etc/ssh/sshd_config
+          echo "ClientAliveInterval 30" | sudo tee -a /etc/ssh/sshd_config
           sudo service ssh restart
           
-          # 3. تثبيت Cloudflared
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          # 3. تحميل وتثبيت Cloudflared (الطريقة المضمونة)
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
           sudo dpkg -i cloudflared.deb
           
-          # 4. تشغيل النفق وإبقاء السيرفر حياً
+          # 4. تشغيل النفق (سيبقى حياً طالما المهمة تعمل)
+          echo "------------------------------------"
           echo "SERVER IS READY! COPY THE LINK BELOW:"
           cloudflared tunnel --url tcp://127.0.0.1:22
+          
