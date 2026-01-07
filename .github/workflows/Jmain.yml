@@ -1,0 +1,15 @@
+name: Architect_Permanent_VPS
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set_Root_Password
+      run: echo "root:Architect2026" | sudo chpasswd
+    - name: Configure_SSH
+      run: |
+        sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+        sudo service ssh restart
+    - name: Launch_Serveo_Tunnel
+      run: ssh -R architect-vps:22:localhost:22 serveo.net
+      
