@@ -1,14 +1,32 @@
-name: SHADOW_CORE_VPS
-on: workflow_dispatch # يسمح لك بتشغيله يدوياً
+name: CLOUDFLARE_DIRECT_SSH
+on: workflow_dispatch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
-
-    - name: Setup Tmate Session
-      uses: mxschmitt/action-tmate@v3
-      with:
-        limit-access-to-user: false # للسماح لك بالدخول فوراً
+      - name: Setup Shadow Environment
+        run: |
+          # 1. إعداد المستخدم وصلاحيات الروت
+          sudo useradd -m shadow -s /bin/bash
+          sudo usermod -aG sudo shadow
+          echo "shadow:password123" | sudo chpasswd
+          
+          # 2. تثبيت Cloudflare Tunnel
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared.deb
+          
+          # 3. تشغيل خدمة SSH
+          sudo service ssh start
+          
+          # 4. فتح النفق واستخراج الرابط بصيغة واضحة
+          echo "Connecting to Cloudflare..."
+          nohup cloudflared tunnel --url tcp://localhost:22 > cf.log 2>&1 &
+          sleep 15
+          echo "------------------------------------"
+          echo "SSH CONNECTION DETAILS FOR TERMIUS:"
+          grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf.log | sed 's/https:\/\//tcp:\/\//'
+          echo "------------------------------------"
+          
+          # إبقاء المهمة تعمل لمدة 6 ساعات
+          sleep 21600
