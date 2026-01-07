@@ -7,32 +7,23 @@ jobs:
     steps:
       - name: Setup Stable Environment
         run: |
-          # 1. إعداد المستخدم (core_user)
+          # 1. إعداد المستخدم والـ SSH
           sudo useradd -m core_user -s /bin/bash
           sudo usermod -aG sudo core_user
           echo "core_user:password123" | sudo chpasswd
+          sudo apt-get update && sudo apt-get install -y openssh-server
           
-          # 2. إعداد الـ SSH ومنع انقطاع الاتصال (KeepAlive)
-          sudo apt-get update
-          sudo apt-get install -y openssh-server
-          echo "TCPKeepAlive yes" | sudo tee -a /etc/ssh/sshd_config
-          echo "ClientAliveInterval 30" | sudo tee -a /etc/ssh/sshd_config
+          # 2. ضبط الـ SSH لمنع الـ Broken pipe
+          sudo sed -i 's/#TCPKeepAlive yes/TCPKeepAlive yes/' /etc/ssh/sshd_config
+          sudo sed -i 's/#ClientAliveInterval 0/ClientAliveInterval 15/' /etc/ssh/sshd_config
+          sudo sed -i 's/#ClientAliveCountMax 3/ClientAliveCountMax 100/' /etc/ssh/sshd_config
           sudo service ssh restart
           
-          # 3. تحميل وتثبيت Cloudflared (مع التحقق من وجود الملف)
-          echo "Downloading Cloudflared..."
+          # 3. تحميل وتثبيت Cloudflared
           curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+          sudo dpkg -i cloudflared.deb
           
-          if [ -f "cloudflared.deb" ]; then
-            echo "Installing..."
-            sudo dpkg -i cloudflared.deb
-          else
-            echo "Download failed!"
-            exit 1
-          fi
-          
-          # 4. تشغيل النفق (يبقى حياً في الواجهة الأمامية لمنع إغلاق المهمة)
-          echo "------------------------------------"
-          echo "SERVER IS READY! COPY THE LINK BELOW:"
+          # 4. تشغيل النفق وإبقاء المهمة تعمل
+          echo "SERVER READY - USE THE LINK BELOW"
           cloudflared tunnel --url tcp://localhost:22
           
