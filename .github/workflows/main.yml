@@ -1,29 +1,30 @@
-name: CLOUDFLARE_UNBREAKABLE_SSH
+name: CLOUDFLARE_SSH_KEY_LOGIN
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Super Environment
+      - name: Setup Environment with Key
         run: |
-          # 1. إعداد المستخدم والـ SSH
+          # 1. إنشاء المستخدم core_user
           sudo useradd -m core_user -s /bin/bash
-          sudo usermod -aG sudo core_user
-          echo "core_user:password123" | sudo chpasswd
           
-          # 2. ضبط SSH ليكون "عنيداً" ولا يقطع الاتصال
+          # 2. إعداد المفتاح للدخول التلقائي
+          sudo mkdir -p /home/core_user/.ssh
+          echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAj24Z5We3M8PaPRMfs22fFgV+ZbjkON+6Y91NaabH/y u0_a265@localhost" | sudo tee /home/core_user/.ssh/authorized_keys
+          
+          # 3. ضبط الصلاحيات الأمنية للمجلد
+          sudo chown -R core_user:core_user /home/core_user/.ssh
+          sudo chmod 700 /home/core_user/.ssh
+          sudo chmod 600 /home/core_user/.ssh/authorized_keys
+          
+          # 4. تشغيل SSH وتثبيت Cloudflared
           sudo apt-get update && sudo apt-get install -y openssh-server
-          echo "TCPKeepAlive yes" | sudo tee -a /etc/ssh/sshd_config
-          echo "ClientAliveInterval 5" | sudo tee -a /etc/ssh/sshd_config
-          echo "ClientAliveCountMax 1000" | sudo tee -a /etc/ssh/sshd_config
-          sudo service ssh restart
-          
-          # 3. تحميل وتثبيت Cloudflared بشكل سليم
           curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
           sudo dpkg -i cloudflared.deb
           
-          # 4. تشغيل النفق مع بروتوكول HTTP2 لزيادة الاستقرار
-          echo "SERVER IS READY!"
-          cloudflared tunnel --protocol http2 --url tcp://localhost:22
+          # 5. تشغيل النفق
+          echo "SERVER READY - CONNECT NOW"
+          cloudflared tunnel --url tcp://localhost:22
           
