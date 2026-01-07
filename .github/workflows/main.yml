@@ -1,19 +1,14 @@
-name: Architect_Final_Safe_VPS
-on: workflow_dispatch
+name: SHADOW_CORE_VPS
+on: workflow_dispatch # يسمح لك بتشغيله يدوياً
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Set_Up_VPS
-      run: |
-        sudo apt update
-        sudo apt install -y tmate
-    - name: Launch_Secure_Tunnel
-      run: |
-        tmate -S /tmp/tmate.sock new-session -d
-        tmate -S /tmp/tmate.sock wait tmate-ready
-        echo "________________________________________________"
-        echo "THE ARCHITECT - CONNECTION DATA:"
-        tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-        echo "________________________________________________"
-        sleep 6h
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Setup Tmate Session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-user: false # للسماح لك بالدخول فوراً
