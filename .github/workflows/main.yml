@@ -1,35 +1,27 @@
-name: CLOUDFLARE_DIRECT_SSH
+name: CLOUDFLARE_STABLE_SSH
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Force Connect Environment
+      - name: Setup Stable Environment
         run: |
-          # 1. تنظيف وإعداد المستخدم
-          sudo useradd -m admin_core -s /bin/bash
-          sudo usermod -aG sudo admin_core
-          echo "admin_core:password123" | sudo chpasswd
+          # 1. إعداد المستخدم
+          sudo useradd -m core_user -s /bin/bash
+          sudo usermod -aG sudo core_user
+          echo "core_user:password123" | sudo chpasswd
           
-          # 2. إعداد الـ SSH بضبط يسمح بالاتصال السريع
-          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          # 2. تثبيت وتحديث SSH لمنع الـ Disconnect
+          sudo apt-get update && sudo apt-get install -y openssh-server
+          sudo sed -i 's/#TCPKeepAlive yes/TCPKeepAlive yes/' /etc/ssh/sshd_config
+          sudo sed -i 's/#ClientAliveInterval 0/ClientAliveInterval 60/' /etc/ssh/sshd_config
           sudo service ssh restart
           
-          # 3. تحميل وتثبيت أداة النفق
+          # 3. تثبيت Cloudflared
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
           
-          # 4. تشغيل النفق بصيغة "الربط المباشر"
-          echo "GENERATING SECURE LINK..."
-          nohup cloudflared tunnel --url tcp://127.0.0.1:22 > cf.log 2>&1 &
-          
-          # 5. استخراج الرابط بشكل متكرر لضمان ظهوره
-          sleep 20
-          echo "------------------------------------"
-          echo "SSH CONNECTION DETAILS FOR TERMIUS:"
-          grep -oE "https://[a-zA-Z0-9.-]+\.trycloudflare\.com" cf.log | sed 's/https:\/\//tcp:\/\//'
-          echo "------------------------------------"
-          
-          # إبقاء المهمة تعمل
-          sleep 21600
+          # 4. تشغيل النفق وإبقاء السيرفر حياً
+          echo "SERVER IS READY! COPY THE LINK BELOW:"
+          cloudflared tunnel --url tcp://127.0.0.1:22
