@@ -7,19 +7,19 @@ jobs:
     steps:
       - name: Setup Shadow Environment
         run: |
-          # 1. إعداد المستخدم وصلاحيات الروت
-          sudo useradd -m shadow -s /bin/bash
-          sudo usermod -aG sudo shadow
-          echo "shadow:password123" | sudo chpasswd
+          # 1. إعداد مستخدم جديد باسم فريد (تجاوز خطأ الصورة 3)
+          sudo useradd -m core_user -s /bin/bash
+          sudo usermod -aG sudo core_user
+          echo "core_user:password123" | sudo chpasswd
           
-          # 2. تثبيت Cloudflare Tunnel
+          # 2. تثبيت Cloudflared
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
           
           # 3. تشغيل خدمة SSH
           sudo service ssh start
           
-          # 4. فتح النفق واستخراج الرابط بصيغة واضحة
+          # 4. فتح النفق واستخراج الرابط
           echo "Connecting to Cloudflare..."
           nohup cloudflared tunnel --url tcp://localhost:22 > cf.log 2>&1 &
           sleep 15
