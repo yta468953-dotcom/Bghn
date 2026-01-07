@@ -1,15 +1,16 @@
-name: Architect_Permanent_VPS
+name: Architect_Ultimate_VPS
 on: workflow_dispatch
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Set_Root_Password
-      run: echo "root:Architect2026" | sudo chpasswd
-    - name: Configure_SSH
+    - name: Set_Root_Access
       run: |
+        echo "root:Architect2026" | sudo chpasswd
         sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
         sudo service ssh restart
-    - name: Launch_Serveo_Tunnel
-      run: ssh -R architect-vps:22:localhost:22 serveo.net
-      
+    - name: Launch_Cloudflared_Tunnel
+      run: |
+        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+        sudo dpkg -i cloudflared-linux-amd64.deb
+        cloudflared tunnel --url tcp://localhost:22
