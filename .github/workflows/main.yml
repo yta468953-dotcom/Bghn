@@ -1,27 +1,26 @@
-name: CLOUDFLARE_SSH_KEY_FINAL
-on: workflow_dispatch
+name: 24H_AUTO_RESTART_SERVER
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *' # إعادة تشغيل كل 6 ساعات بدقة
 
 jobs:
-  build:
+  keep_alive_job:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Shadow Environment
+      - name: Deploy Environment
         run: |
-          # 1. إعداد المستخدم والمفتاح الخاص بك
+          # 1. إعداد الوصول بالمفتاح (للدخول بدون باسوورد)
           sudo useradd -m core_user -s /bin/bash
           sudo mkdir -p /home/core_user/.ssh
-          # تم وضع مفتاحك المستخرج من Termux هنا
           echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAj24Z5We3M8PaPRMfs22fFgV+ZbjkON+6Y91NaabH/y u0_a265@localhost" | sudo tee /home/core_user/.ssh/authorized_keys
           sudo chown -R core_user:core_user /home/core_user/.ssh
-          sudo chmod 700 /home/core_user/.ssh
-          sudo chmod 600 /home/core_user/.ssh/authorized_keys
           
-          # 2. تشغيل الـ SSH والـ Cloudflared
-          sudo apt-get update && sudo apt-get install -y openssh-server
+          # 2. تثبيت Cloudflared و Python
+          sudo apt update && sudo apt install -y openssh-server python3 screen
           curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
           sudo dpkg -i cloudflared.deb
           
-          # 3. تشغيل النفق
-          echo "SERVER READY - AUTO LOGIN ENABLED"
+          # 3. تشغيل النفق (سيعمل لمدة 6 ساعات ثم يعيد التشغيل)
           cloudflared tunnel --url tcp://localhost:22
           
