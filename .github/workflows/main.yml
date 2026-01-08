@@ -1,30 +1,27 @@
-name: CLOUDFLARE_SSH_KEY_LOGIN
+name: CLOUDFLARE_SSH_KEY_FINAL
 on: workflow_dispatch
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Environment with Key
+      - name: Setup Shadow Environment
         run: |
-          # 1. إنشاء المستخدم core_user
+          # 1. إعداد المستخدم والمفتاح الخاص بك
           sudo useradd -m core_user -s /bin/bash
-          
-          # 2. إعداد المفتاح للدخول التلقائي
           sudo mkdir -p /home/core_user/.ssh
+          # تم وضع مفتاحك المستخرج من Termux هنا
           echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAj24Z5We3M8PaPRMfs22fFgV+ZbjkON+6Y91NaabH/y u0_a265@localhost" | sudo tee /home/core_user/.ssh/authorized_keys
-          
-          # 3. ضبط الصلاحيات الأمنية للمجلد
           sudo chown -R core_user:core_user /home/core_user/.ssh
           sudo chmod 700 /home/core_user/.ssh
           sudo chmod 600 /home/core_user/.ssh/authorized_keys
           
-          # 4. تشغيل SSH وتثبيت Cloudflared
+          # 2. تشغيل الـ SSH والـ Cloudflared
           sudo apt-get update && sudo apt-get install -y openssh-server
           curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
           sudo dpkg -i cloudflared.deb
           
-          # 5. تشغيل النفق
-          echo "SERVER READY - CONNECT NOW"
+          # 3. تشغيل النفق
+          echo "SERVER READY - AUTO LOGIN ENABLED"
           cloudflared tunnel --url tcp://localhost:22
           
