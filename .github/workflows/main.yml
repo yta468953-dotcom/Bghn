@@ -23,4 +23,3 @@ jobs:
           
           # 3. تشغيل النفق (سيعمل لمدة 6 ساعات ثم يعيد التشغيل)
           cloudflared tunnel --url tcp://localhost:22
-          
